@@ -57,6 +57,8 @@ import org.jetbrains.jet.lang.descriptors.Modality;
 import org.jetbrains.jet.lang.psi.*;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.BindingContextUtils;
+import org.jetbrains.jet.lang.resolve.lazy.ResolveSession;
+import org.jetbrains.jet.lang.resolve.lazy.ResolveSessionUtils;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.jet.plugin.JetBundle;
 import org.jetbrains.jet.plugin.codeInsight.JetFunctionPsiElementCellRenderer;
@@ -236,9 +238,24 @@ public class JetLineMarkerProvider implements LineMarkerProvider {
 
         if (!(element instanceof JetNamedFunction || element instanceof JetProperty)) return null;
 
-        BindingContext bindingContext = WholeProjectAnalyzerFacade.getLazyResolveSessionForFile(file).getBindingContext();
+        ResolveSession sessionForFile = WholeProjectAnalyzerFacade.getLazyResolveSessionForFile(file);
+        BindingContext bindingContext = null;
+
+        if ((element instanceof JetNamedFunction && ((JetNamedFunction) element).isLocal()) ||
+                element instanceof JetProperty && ((JetProperty) element).isLocal()) {
+            bindingContext = ResolveSessionUtils.resolveToExpression(sessionForFile, (JetElement) element);
+        }
+        else {
+            try {
+                sessionForFile.resolveToDescriptor((JetDeclaration) element);
+                bindingContext = sessionForFile.getBindingContext();
+            } catch (IllegalStateException e) {
+                return null;
+            }
+        }
 
         DeclarationDescriptor descriptor = bindingContext.get(BindingContext.DECLARATION_TO_DESCRIPTOR, element);
+
         if (!(descriptor instanceof CallableMemberDescriptor)) {
             return null;
         }
