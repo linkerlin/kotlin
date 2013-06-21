@@ -25,6 +25,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.references.JetSimpleNameReference;
+import org.jetbrains.jet.utils.Profiler;
+
+import java.util.Collection;
 
 public class JetCompletionContributor extends CompletionContributor {
     public JetCompletionContributor() {
@@ -50,19 +53,28 @@ public class JetCompletionContributor extends CompletionContributor {
 
         JetSimpleNameReference jetReference = getJetReference(parameters);
         if (jetReference != null) {
-            result.restartCompletionWhenNothingMatches();
+            Profiler completion = Profiler.create("Completion: " + jetReference);
 
-            CompletionSession session = new CompletionSession(parameters, result, jetReference, position);
-            session.completeForReference();
-
-            if (!session.getJetResult().isSomethingAdded() && session.getParameters().getInvocationCount() < 2) {
-                // Rerun completion if nothing was found
-                session = new CompletionSession(parameters.withInvocationCount(2), result, jetReference, position);
+            try {
+                completion.start();
+            
+                result.restartCompletionWhenNothingMatches();
+    
+                CompletionSession session = new CompletionSession(parameters, result, jetReference, position);
                 session.completeForReference();
+    
+                if (!session.getJetResult().isSomethingAdded() && session.getParameters().getInvocationCount() < 2) {
+                    // Rerun completion if nothing was found
+                    session = new CompletionSession(parameters.withInvocationCount(2), result, jetReference, position);
+                    session.completeForReference();
+                }
+    
+                // Prevent from adding reference variants from standard reference contributor
+                result.stopHere();
             }
-
-            // Prevent from adding reference variants from standard reference contributor
-            result.stopHere();
+            finally {
+                completion.end();
+            }
         }
     }
 
