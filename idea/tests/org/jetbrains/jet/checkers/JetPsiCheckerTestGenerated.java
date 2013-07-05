@@ -40,7 +40,8 @@ public class JetPsiCheckerTestGenerated extends AbstractJetPsiCheckerTest {
         }
         
         public void testAllFilesPresentInChecker() throws Exception {
-            JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests", new File("idea/testData/checker"), Pattern.compile("^(.+)\\.kt$"), false);
+            JetTestUtils.assertAllTestsPresentByMetadata(this.getClass(), "org.jetbrains.jet.generators.tests.GenerateTests",
+                                                         new File("idea/testData/checker"), Pattern.compile("^(.+)\\.kt$"), false);
         }
         
         @TestMetadata("AnonymousInitializers.kt")
@@ -266,6 +267,11 @@ public class JetPsiCheckerTestGenerated extends AbstractJetPsiCheckerTest {
         @TestMetadata("When.kt")
         public void testWhen() throws Exception {
             doTest("idea/testData/checker/When.kt");
+        }
+        
+        @TestMetadata("WhenInEnumInExtensionProperty.kt")
+        public void testWhenInEnumInExtensionProperty() throws Exception {
+            doTest("idea/testData/checker/WhenInEnumInExtensionProperty.kt");
         }
         
     }
